@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Админка</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%221%22 y=%221%22 width=%2214%22 height=%2214%22 rx=%223%22 fill=%22%232f5fe0%22/%3E%3Cpath d=%22M4.5 5.5h7M4.5 8h7M4.5 10.5h4.5%22 stroke=%22%23fff%22 stroke-width=%221.4%22/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/ui/app.css">
+<link rel="stylesheet" href="/theme.css">
+</head>
+<body>
+<div id="app">
+  <nav id="rail"></nav>
+  <aside id="nav" class="zone">
+    <div class="nav-head"><input id="navq" type="search" autocomplete="off" spellcheck="false" placeholder="Поиск"></div>
+    <div class="nav-body" id="navb"></div>
+    <div class="split" data-pane="nav" title="Перетащить — ширина, двойной щелчок — по умолчанию, [ — скрыть"></div>
+  </aside>
+  <main id="main" class="zone">
+    <div class="main-head" id="mainh"></div>
+    <div class="main-body" id="mainb"><div class="empty">Загрузка…</div></div>
+  </main>
+  <aside id="ctx" class="zone ctx-zone">
+    <div class="split" data-pane="ctx" title="Перетащить — ширина, двойной щелчок — по умолчанию, ] — скрыть"></div>
+    <div class="ctx-head" id="ctxh"></div>
+    <div class="ctx-body" id="ctxb"></div>
+  </aside>
+  <div id="frames"></div>
+</div>
+<script type="module" src="/ui/app.js"></script>
+</body>
+</html>

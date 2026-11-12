@@ -1,0 +1,298 @@
+{
+  "format": "task-tracker/1",
+  "id_prefix": "BL",
+  "id_pad": 4,
+  "types": [
+    "feature",
+    "bug",
+    "chore",
+    "research",
+    "idea"
+  ],
+  "default_type": "feature",
+  "priorities": [
+    "p0",
+    "p1",
+    "p2",
+    "p3"
+  ],
+  "default_priority": "p2",
+  "sizes": [
+    {
+      "id": "epic",
+      "title": "эпик"
+    },
+    {
+      "id": "story",
+      "title": "стори"
+    },
+    {
+      "id": "task",
+      "title": "фича/баг"
+    },
+    {
+      "id": "tweak",
+      "title": "правка"
+    }
+  ],
+  "initial_status": "backlog",
+  "statuses": [
+    {
+      "id": "icebox",
+      "title": "Icebox",
+      "category": "todo",
+      "hold": true
+    },
+    {
+      "id": "backlog",
+      "title": "Backlog",
+      "category": "todo"
+    },
+    {
+      "id": "todo",
+      "title": "To do",
+      "category": "todo"
+    },
+    {
+      "id": "in_progress",
+      "title": "In progress",
+      "category": "active"
+    },
+    {
+      "id": "review",
+      "title": "Review",
+      "category": "active"
+    },
+    {
+      "id": "qa",
+      "title": "Architecture QA",
+      "category": "active"
+    },
+    {
+      "id": "done",
+      "title": "Done",
+      "category": "done"
+    },
+    {
+      "id": "cancelled",
+      "title": "Cancelled",
+      "category": "done"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "icebox",
+      "to": "backlog",
+      "gates": [
+        "user_confirmed",
+        "reason"
+      ]
+    },
+    {
+      "from": "backlog",
+      "to": "icebox"
+    },
+    {
+      "from": "backlog",
+      "to": "todo",
+      "gates": [
+        "has_decision",
+        "guardians_asked",
+        "approved"
+      ]
+    },
+    {
+      "from": "todo",
+      "to": "backlog",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "todo",
+      "to": "in_progress",
+      "gates": [
+        "deps_done",
+        "preflight"
+      ]
+    },
+    {
+      "from": "in_progress",
+      "to": [
+        "todo",
+        "backlog"
+      ],
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "in_progress",
+      "to": "review",
+      "gates": [
+        "committed",
+        "acceptance_checked",
+        "has_result",
+        "self_check"
+      ]
+    },
+    {
+      "from": "in_progress",
+      "to": "done",
+      "gates": [
+        "committed",
+        "light_path",
+        "acceptance_checked",
+        "has_result",
+        "self_check",
+        "wiki_applied"
+      ]
+    },
+    {
+      "from": "review",
+      "to": "in_progress",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "review",
+      "to": "qa",
+      "gates": [
+        "accepted"
+      ]
+    },
+    {
+      "from": "qa",
+      "to": "done",
+      "gates": [
+        "audit_passed",
+        "wiki_applied"
+      ]
+    },
+    {
+      "from": "qa",
+      "to": "in_progress",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "done",
+      "to": "in_progress",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "cancelled",
+      "to": "backlog",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "*",
+      "to": "cancelled",
+      "gates": [
+        "reason"
+      ]
+    }
+  ],
+  "gates": {
+    "deps_done": {
+      "kind": "deps_done",
+      "also": [
+        "review",
+        "qa"
+      ]
+    },
+    "acceptance_checked": {
+      "kind": "checklist_complete",
+      "section": "Acceptance criteria",
+      "message": "критерии приёмки, если они есть, должны быть выполнены и отмечены (ac <id> --check N)",
+      "allow_empty": true
+    },
+    "has_result": {
+      "kind": "section_nonempty",
+      "section": "Result",
+      "message": "заполни ## Result: что сделано, какие файлы затронуты, как проверено"
+    },
+    "reason": {
+      "kind": "note_required",
+      "message": "нужна --note с причиной"
+    },
+    "user_confirmed": {
+      "kind": "by_user",
+      "message": "из icebox задачу выводит только пользователь: по его явной просьбе (номер или описание задачи) — --by user и --note с его словами"
+    },
+    "has_decision": {
+      "kind": "section_nonempty",
+      "section": "Decision",
+      "message": "груминг: заполни ## Decision — как повлияет на основы проекта (.tasks/tech/pillars.md), варианты с за и против, выбранное решение и почему; для эпика — его чек-лист в Plan"
+    },
+    "guardians_asked": {
+      "kind": "guardians_asked",
+      "section": "Guardians",
+      "message": "груминг: каждый хранитель проекта сказал своё слово по задаче (или «не моя зона»): tasks guardian brief <хранитель> <id> → свежий агент на хранителя → tasks guardian say <id> <хранитель> --file …; в проекте без хранителей гейт проходит сам (references/guardians.md)"
+    },
+    "approved": {
+      "kind": "by_user",
+      "message": "решение согласует пользователь: переводит агент по его явному «да» — --by user --note «его слова»"
+    },
+    "preflight": {
+      "kind": "attestation",
+      "min_length": 200,
+      "prompt": "Перед началом работы исполнитель (субагент или основной агент) сверяет задачу с кодом сейчас, а не по памяти груминга. Любое «нет» — не бери задачу: верни её в backlog с --note вопросом, основной агент несёт его пользователю.",
+      "questions": [
+        "Слова пользователя (Description) и согласованное решение (Decision) прочитаны целиком; в решении учтено всё, о чём просил пользователь, ничего не потеряно.",
+        "Файлы и модули, на которые опирается решение, открыты и существуют в том виде, как решение предполагает (назови их).",
+        "Решение не противоречит основам проекта и решениям в других задачах (назови проверенные).",
+        "Объём ясен: что входит, что нет; где решение неоднозначно — какое прочтение выбрано и почему оно безопасно."
+      ]
+    },
+    "self_check": {
+      "kind": "attestation",
+      "min_length": 150,
+      "prompt": "Самопроверка автора перед приёмкой пользователем. Смотри в фактический diff (git diff / изменённые файлы), не по памяти. По каждому пункту: pass/fail + одна фраза доказательства (файл, функция). Любой fail — не переводи задачу, а исправь или заведи задачу. Независимый аудит будет позже, это не он.",
+      "questions": [
+        "Встроено в существующую архитектуру: использованы имеющиеся модули, утилиты и паттерны; нет параллельной реализации того, что уже есть.",
+        "Границы модулей и направление зависимостей соблюдены; нет новых циклов и протечек слоёв.",
+        "Нет мусора: временных хаков, отладочного вывода, закомментированного кода, мёртвых веток, TODO без задачи.",
+        "Всё, что должно меняться вместе, обновлено: данные, сохранения и миграции, локализация, конфиги, dev-скрипты; правки вики — черновиком в разделе «Wiki» задачи, сама вики не тронута (она обновляется на переходе в done).",
+        "Стиль и именование как в окружающем коде; объём правки соответствует задаче, без рефакторинга вне её рамок.",
+        "Что вышло за рамки задачи — заведено отдельными задачами (ID) или явно «нет».",
+        "Проверки проекта из .tasks/tech/checks.md, которые касаются этих файлов, прогнаны (какие и с каким итогом)."
+      ]
+    },
+    "accepted": {
+      "kind": "by_user",
+      "message": "приёмку делает пользователь: переводит агент по его явному «принимаю» — --by user --note «его слова»"
+    },
+    "audit_passed": {
+      "kind": "audit",
+      "since": "work"
+    },
+    "light_path": {
+      "kind": "field_in",
+      "field": "size",
+      "values": [
+        "tweak"
+      ],
+      "message": "короткий путь только для правки (size tweak): мелкий баг или подстройка, где ничего не видно пользователю; её файлы проверит следующий пакетный аудит изменённого"
+    },
+    "wiki_applied": {
+      "kind": "attestation",
+      "min_length": 20,
+      "prompt": "Вики — источник правды: в неё попадает только принятое пользователем и прошедшее аудит. Перенеси раздел «Wiki» задачи в вики сейчас (не раньше) и ответь.",
+      "questions": [
+        "Что перенесено из раздела «Wiki» и в какие файлы вики — или «правок вики нет».",
+        "По ходу работы вики не правилась (кроме исключений из CLAUDE.md): правки шли черновиком в «Wiki»."
+      ]
+    },
+    "committed": {
+      "kind": "committed",
+      "message": "работа уходит из in_progress только закоммиченной (код вне .tasks/): её коммит — конец отрезка работы, по нему аудит берёт файлы задачи"
+    }
+  }
+}

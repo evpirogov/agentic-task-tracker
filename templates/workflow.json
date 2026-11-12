@@ -1,0 +1,181 @@
+{
+  "format": "task-tracker/1",
+  "id_prefix": "BL",
+  "id_pad": 4,
+  "types": [
+    "feature",
+    "bug",
+    "chore",
+    "research",
+    "idea"
+  ],
+  "default_type": "feature",
+  "priorities": [
+    "p0",
+    "p1",
+    "p2",
+    "p3"
+  ],
+  "default_priority": "p2",
+  "sizes": [
+    {
+      "id": "epic",
+      "title": "эпик"
+    },
+    {
+      "id": "story",
+      "title": "стори"
+    },
+    {
+      "id": "task",
+      "title": "фича/баг"
+    },
+    {
+      "id": "tweak",
+      "title": "правка"
+    }
+  ],
+  "initial_status": "backlog",
+  "statuses": [
+    {
+      "id": "icebox",
+      "title": "Icebox",
+      "category": "todo",
+      "hold": true
+    },
+    {
+      "id": "backlog",
+      "title": "Backlog",
+      "category": "todo"
+    },
+    {
+      "id": "in_progress",
+      "title": "In progress",
+      "category": "active"
+    },
+    {
+      "id": "review",
+      "title": "Review",
+      "category": "active"
+    },
+    {
+      "id": "done",
+      "title": "Done",
+      "category": "done"
+    },
+    {
+      "id": "cancelled",
+      "title": "Cancelled",
+      "category": "done"
+    }
+  ],
+  "transitions": [
+    {
+      "from": "backlog",
+      "to": "in_progress",
+      "gates": [
+        "deps_done"
+      ]
+    },
+    {
+      "from": "in_progress",
+      "to": "backlog",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "in_progress",
+      "to": [
+        "review",
+        "done"
+      ],
+      "gates": [
+        "acceptance_checked",
+        "has_result",
+        "architecture_review"
+      ]
+    },
+    {
+      "from": "review",
+      "to": "done"
+    },
+    {
+      "from": "review",
+      "to": "in_progress",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "done",
+      "to": "in_progress",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "cancelled",
+      "to": "backlog",
+      "gates": [
+        "reason"
+      ]
+    },
+    {
+      "from": "icebox",
+      "to": "backlog",
+      "gates": [
+        "user_confirmed",
+        "reason"
+      ]
+    },
+    {
+      "from": "backlog",
+      "to": "icebox"
+    },
+    {
+      "from": "*",
+      "to": "cancelled",
+      "gates": [
+        "reason"
+      ]
+    }
+  ],
+  "gates": {
+    "deps_done": {
+      "kind": "deps_done"
+    },
+    "acceptance_checked": {
+      "kind": "checklist_complete",
+      "section": "Acceptance criteria",
+      "message": "критерии приёмки, если они есть, должны быть выполнены и отмечены (ac <id> --check N)",
+      "allow_empty": true
+    },
+    "has_result": {
+      "kind": "section_nonempty",
+      "section": "Result",
+      "message": "заполни ## Result: что сделано, какие файлы затронуты, как проверено"
+    },
+    "reason": {
+      "kind": "note_required",
+      "message": "нужна --note с причиной"
+    },
+    "architecture_review": {
+      "kind": "attestation",
+      "min_length": 150,
+      "prompt": "Ревью целостности решения. Смотри в фактический diff (git diff / изменённые файлы), не по памяти. По каждому пункту: pass/fail + одна фраза доказательства (файл, функция). Любой fail — не переводи задачу, а исправь или заведи задачу.",
+      "questions": [
+        "Встроено в существующую архитектуру: использованы имеющиеся модули, утилиты и паттерны; нет параллельной реализации того, что уже есть.",
+        "Границы модулей и направление зависимостей соблюдены; нет новых циклов и протечек слоёв.",
+        "Нет мусора: временных хаков, отладочного вывода, закомментированного кода, мёртвых веток, TODO без задачи.",
+        "Всё, что должно меняться вместе, обновлено: данные, сохранения и миграции, локализация, конфиги, документация, dev-скрипты.",
+        "Стиль и именование как в окружающем коде; объём правки соответствует задаче, без рефакторинга вне её рамок.",
+        "Что вышло за рамки задачи — заведено отдельными задачами (ID) или явно «нет»."
+      ]
+    },
+    "user_confirmed": {
+      "kind": "by_user",
+      "message": "из icebox задачу выводит только пользователь: по его явной просьбе (номер или описание задачи) — --by user и --note с его словами"
+    }
+  }
+}
