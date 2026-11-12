@@ -52,7 +52,7 @@ node ~/.claude/skills/task-tracker/scripts/tasks.mjs <command> …
 | перевести | `tasks move BL-7 <status> [--note "…"] [--attest gate="…"]` |
 | поля | `tasks edit BL-7 --priority p0 --size story --initiative ground --add-tag perf --deps BL-3,BL-4` |
 | инициативы | `tasks initiative [list]`, `initiative add <id> <Название> [--goal …] [--before id]`, `edit`, `order <id> <id>…` (порядок рядов сверху вниз), `close\|open`; аспекты: `tasks aspect add perf Скорость`; доска рядами `tasks board --lanes` |
-| разделы | `tasks section BL-7 Plan "…"`, `tasks section BL-7 Result --stdin <<'EOF' … EOF`, `--append` дописывает |
+| разделы | `tasks section BL-7 Plan "…"`, `tasks section BL-7 Result --stdin <<'EOF' … EOF`, `--append` дописывает, `--replace` переписывает непустой раздел (без флага — ошибка), `--remove` убирает раздел; внутри раздела заголовки только `###` |
 | заметка | `tasks note BL-7 "что выяснил"` (датированная строка в Notes); слова пользователя — `--by user` (дословно, цитатой) |
 | критерии | `tasks ac BL-7 --add "…"`, `--check 1,2`, `--uncheck 3`, `--rm 4` |
 | журнал | `tasks history [BL-7]`, проверка формата `tasks validate`, всё в JSON `tasks export` |
