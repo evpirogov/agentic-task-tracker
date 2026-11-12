@@ -474,15 +474,23 @@ export function addAudit(db, a) {
 
 // ---------- the brief an auditor works from ----------
 
-// Files the tasks' work changed: each task's own stretches of work (L.workRanges) since its last
-// audit (a new audit judges the work done after the last verdict), the code read as it is now
+// Files the tasks' work changed: each task's own stretches of work (L.workRanges); after an audit of
+// the task, its stretches since and everything changed from that audit's commit on (a fix made after
+// the verdict counts wherever the task stood). The code is read as it is now.
 export function taskFiles(db, ids) {
   const audits = L.loadAudits(db);
   const ranges = {}, files = new Set();
   for (const id of ids) {
-    const after = audits.filter((a) => a.tasks?.[id]).at(-1)?.ts ?? '';
+    const last = audits.filter((a) => a.tasks?.[id]).at(-1);
+    const after = last?.ts ?? '';
     ranges[id] = L.workRanges(db, id).filter((r) => r.at > after);
     for (const f of L.workFiles(db, id, { after })) files.add(f);
+    const base = last?.head?.replace(/\+$/, '');
+    if (base) {
+      ranges[id].push({ from: base, to: null, audit: last.id });
+      for (const f of git(db.root, 'diff', '--name-only', base).stdout.split('\n')) if (f) files.add(f);
+      for (const f of git(db.root, 'ls-files', '--others', '--exclude-standard').stdout.split('\n')) if (f) files.add(f);
+    }
   }
   return { ranges, files: [...files].sort() };
 }
@@ -524,7 +532,7 @@ export function auditBrief(db, { tasks = [], files = [], title = '', out = '', o
   const read = (rel) => { const p = path.join(db.dir, rel); return fs.existsSync(p) ? fs.readFileSync(p, 'utf8').trim() : ''; };
   const tpl = fs.readFileSync(path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'templates', 'auditor.md'), 'utf8');
   const parts = [tpl.trim()];
-  parts.push(`# This audit\n\n${title || (ids.length ? `Tasks ${ids.join(', ')}` : 'Code audit')}\nProject root: ${db.root}\nCommit: ${state.head ?? '—'}${Object.keys(fromTasks.ranges).length ? `\nThe tasks' work (the files changed in these stretches are the scope; judge the code as it is now): ${Object.entries(fromTasks.ranges).map(([id, rs]) => `${id} ${rs.map((r) => `${r.from}..${r.to ?? 'working tree'}`).join(', ') || 'no work since its last audit'}`).join('; ')}` : ''}\nWrite your verdict as JSON to: ${out || '<path given by the caller>'}`);
+  parts.push(`# This audit\n\n${title || (ids.length ? `Tasks ${ids.join(', ')}` : 'Code audit')}\nProject root: ${db.root}\nCommit: ${state.head ?? '—'}${Object.keys(fromTasks.ranges).length ? `\nThe tasks' work (the files changed in these stretches are the scope; judge the code as it is now): ${Object.entries(fromTasks.ranges).map(([id, rs]) => `${id} ${rs.map((r) => `${r.from}..${r.to ?? 'working tree'}${r.audit ? ` (since ${r.audit})` : ''}`).join(', ') || '—'}`).join('; ')}` : ''}\nWrite your verdict as JSON to: ${out || '<path given by the caller>'}`);
   const pillars = read(cfg.tech.pillars), checks = read(cfg.tech.checks);
   const open = state.findings.filter((x) => x.open && (x.files ?? []).some((p) => scope.includes(String(p).replace(/:\d+(-\d+)?$/, ''))));
   // the scanner's rules (fenced json) are the scanner's: their hits come per file below
@@ -540,6 +548,7 @@ export function auditBrief(db, { tasks = [], files = [], title = '', out = '', o
       `## What the user asked (verbatim)\n\n${sec('Description') || '—'}`,
       sec('Decision') && `## The agreed solution\n\n${sec('Decision')}`,
       sec('Acceptance criteria') && `## Acceptance criteria\n\n${sec('Acceptance criteria')}`,
+      sec('Wiki') && `## The task's wiki draft (goes into the wiki on qa → done: it must say what the code does now)\n\n${sec('Wiki')}`,
       G?.list.length && sec(L.GUARDIANS) && `## What the guardians said at grooming (part of the agreed solution)\n\n${sec(L.GUARDIANS).replace(/^### /gm, '### Guardian ')}`].filter(Boolean).join('\n\n'));
   }
   const lines = scope.map((f) => {

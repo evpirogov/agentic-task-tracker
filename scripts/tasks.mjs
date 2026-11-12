@@ -9,7 +9,7 @@ import * as C from './code.mjs';
 import { serve } from './serve.mjs';
 
 const SKILL = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const BOOL = new Set(['json', 'all', 'force', 'stdin', 'append', 'no-commands', 'help', 'open', 'red', 'stale', 'only-files', 'lanes', 'rest']);
+const BOOL = new Set(['json', 'all', 'force', 'stdin', 'append', 'no-commands', 'help', 'open', 'red', 'stale', 'only-files', 'lanes', 'rest', 'replace', 'remove']);
 
 const USAGE = `tasks.mjs — file-based task tracker (.tasks/)
 
@@ -25,7 +25,8 @@ const USAGE = `tasks.mjs — file-based task tracker (.tasks/)
   move <id> <status> [--note text] [--attest gate=text]… [--by who] [--force]
   edit <id> [--title t] [--type t] [--priority p] [--size s|none] [--initiative i|none] [--tags a,b] [--add-tag x] [--rm-tag x]
             [--deps …] [--parent id|none] [--assignee who|none] [--docs …] [--origin A-1#2|none]
-  section <id> <name> [--append] (<text…> | --stdin)
+  section <id> <name> [--append | --replace] (<text…> | --stdin)   text already there: --append adds, --replace rewrites
+  section <id> <name> --remove                remove a section (a stray one)
   note <id> <text…> [--by user]              dated line in ## Notes (--by user: the user's words, verbatim)
   ac <id> [--add text]… [--check 1,2] [--uncheck 3] [--rm 4]
   initiative [list]                          the project's initiatives (rows of the board) with their tasks counted
@@ -543,9 +544,9 @@ try {
     case 'edit': cmdEdit(db, opt, pos); break;
     case 'section': {
       const [id, name, ...words] = pos;
-      if (!id || !name) die('section <id> <name> (<text> | --stdin)');
-      const t = L.writeSection(db, id, name, opt.stdin ? stdin() : words.join(' '), { append: !!opt.append, by: by(opt) });
-      console.log(`~ ${t.fields.id} ## ${name}`);
+      if (!id || !name) die('section <id> <name> (<text> | --stdin) | --remove');
+      const t = L.writeSection(db, id, name, opt.remove ? '' : opt.stdin ? stdin() : words.join(' '), { append: !!opt.append, replace: !!opt.replace, rm: !!opt.remove, by: by(opt) });
+      console.log(`${opt.remove ? '-' : '~'} ${t.fields.id} ## ${name}`);
       break;
     }
     case 'note': {

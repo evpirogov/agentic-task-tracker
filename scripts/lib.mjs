@@ -365,9 +365,24 @@ export function editTask(db, raw, changes, { by = 'agent' } = {}) {
   return { task: t, diff };
 }
 
-export function writeSection(db, raw, name, text, { append = false, by = 'agent' } = {}) {
+// A section's text: a level-1 or level-2 heading in it would split the task into sections of its
+// own (use ### inside); text already there is added to (append) or rewritten on purpose (replace),
+// never lost by accident: a Result kept from an earlier round of work is part of the decision log.
+// rm: the section goes (a stray one, split off by such a heading before this check).
+export function writeSection(db, raw, name, text, { append = false, replace = false, rm = false, by = 'agent' } = {}) {
   const t = loadTask(db, raw);
+  const s = getSection(t, name);
+  if (rm) {
+    if (!s) throw new TaskError(`${t.fields.id}: no section "${name}"`);
+    t.sections.splice(t.sections.indexOf(s), 1);
+    saveTask(db, t);
+    appendEvent(db, { task: t.fields.id, type: 'section', by, section: s.name, mode: 'rm' });
+    return t;
+  }
+  const head = String(text).split('\n').find((l) => /^#{1,2} /.test(l));
+  if (head) throw new TaskError(`a heading "${head.trim()}" would split ${t.fields.id} into sections of its own: use ### inside a section`);
   const old = sectionText(t, name);
+  if (meaningful(old) && !append && !replace) throw new TaskError(`${t.fields.id} ## ${s.name} has text already: --append to add to it, --replace to rewrite it`);
   setSection(t, name, append && old ? `${old}\n${text}` : text);
   saveTask(db, t);
   appendEvent(db, { task: t.fields.id, type: 'section', by, section: getSection(t, name).name, mode: append ? 'append' : 'set' });
@@ -466,6 +481,11 @@ function runGate(db, t, gid, ctx) {
       // a finding filed to a task of its own (that task's origin) is that task's, not this one's
       const held = new Set(loadAll(db).tasks.filter((x) => x.fields.id !== f.id).map((x) => x.fields.origin).filter(Boolean));
       const open = a && v?.verdict === 'pass' ? guardianCalls(db, a).filter((c) => c.tasks.includes(f.id) && c.review?.verdict !== 'accept' && !held.has(c.finding)) : [];
+      // a finding filed to this task (its origin) in a guardian's zone: that guardian accepts it again
+      // after this task's audit (its review of the fix), whatever it said before
+      const [oa, on] = String(f.origin ?? '').toUpperCase().split('#');
+      const own = on && v?.verdict === 'pass' ? guardianCalls(db, loadAudits(db).find((x) => x.id === oa) ?? { findings: [] }).find((c) => c.finding === `${oa}#${on}`) : null;
+      if (own && !(own.review?.verdict === 'accept' && own.review.ts > a.ts)) open.push({ ...own, review: own.review?.ts > a.ts ? own.review : null });
       const ok = v?.verdict === 'pass' && !open.length;
       const why = open.map((c) => `${c.finding} «${c.name}»: ${c.review ? `${c.review.id} не принял — ${c.review.summary ?? ''}` : `нет детального ревью (tasks guardian review ${c.finding})`}`).join('; ');
       return { ...r, ok, audit: a?.id, message: r.message && !open.length ? r.message : (a ? (open.length ? `${a.id}: хранители не приняли: ${why}` : `${a.id}: verdict "${v?.verdict}" — fix the findings and send it to a new audit`) : 'no independent audit of this task since it entered this status (tasks audit brief → auditor agent → tasks audit add)') };
